@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminplanung</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            position: relative; /* Ermöglicht das Positionieren des Bildes innerhalb des Body */
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Flag_of_the_United_States_Marshals_Service.svg/800px-Flag_of_the_United_States_Marshals_Service.svg.png');
+            background-size: cover; /* Hintergrundbild deckt den gesamten Bereich ab */
+            background-position: cover ; /* Bild wird zentriert */
+            background-repeat: no-repeat; /* Verhindert das Wiederholen des Bildes */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: rgba(255, 255, 255, 0.8); /* Hintergrundfarbe der Tabelle, um die Lesbarkeit zu verbessern */
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #ffffff;
+        }
+        .form-container {
+            margin-bottom: 20px;
+            background-color: rgba(255, 255, 255, 0.8); /* Hintergrundfarbe der Formulareingaben */
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .form-container label {
+            margin-right: 10px;
+        }
+        .form-container input, .form-container select {
+            margin-right: 10px;
+        }
+        .form-container button {
+            padding: 5px 10px;
+        }
+        .done {
+            text-decoration: line-through;
+            color: gray;
+        }
+        .status-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-done {
+            background-color: green;
+        }
+        .status-pending {
+            background-color: rgb(255, 217, 0);
+        }
+        /* Bild oben rechts */
+        .top-right-image {
+            position: absolute;
+            top: 5px;
+            right: 30px;
+            width: 100px; /* Passt die Größe des Bildes an */
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Terminplanung</h1>
+
+    <!-- Bild in der oberen rechten Ecke -->
+
+
+    <div class="form-container">
+        <label for="datum">Datum:</label>
+        <input type="date" id="datum">
+
+        <label for="uhrzeit">Uhrzeit:</label>
+        <input type="time" id="uhrzeit">
+
+        <label for="name1">Bewerber:</label>
+        <input type="text" id="name1" placeholder="Bewerber">
+
+        <label for="beamter">Beamter:</label>
+        <select id="beamter">
+            <option value="">Bitte wählen</option>
+            <option value="USM-10 | Thiago Azzaro">USM-10 | Thiago Azzaro</option>
+            <option value="USM-16 | Leon Smith">USM-16 | Leon Smith</option>
+            <option value="USM-17 | Cosmo Garcia">USM-17 | Cosmo Garcia</option>
+            <option value="USM-18 | Milan Sermic">USM-18 | Milan Sermic</option>
+            <option value="USM-19 | Luca Stein">USM-19 | Luca Stein</option>
+        </select>
+
+        <button onclick="terminHinzufuegen()">Hinzufügen</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Datum</th>
+                <th>Uhrzeit</th>
+                <th>Bewerber</th>
+                <th>Beamter</th>
+                <th>Aktionen</th>
+            </tr>
+        </thead>
+        <tbody id="terminListe">
+            <!-- Dynamische Inhalte werden hier eingefügt -->
+        </tbody>
+    </table>
+
+    <script>
+        // Funktion zum Hinzufügen eines neuen Termins
+        function terminHinzufuegen() {
+            const datum = document.getElementById('datum').value;
+            const uhrzeit = document.getElementById('uhrzeit').value;
+            const name1 = document.getElementById('name1').value;
+            const beamter = document.getElementById('beamter').value;
+
+            if (datum && uhrzeit && name1 && beamter) {
+                const termin = {
+                    id: Date.now(),  // Eindeutige ID basierend auf der aktuellen Zeit
+                    datum: datum,
+                    uhrzeit: uhrzeit,
+                    name1: name1,
+                    beamter: beamter,
+                    status: 'pending'
+                };
+
+                // Termindaten speichern
+                let termine = JSON.parse(localStorage.getItem('termine')) || [];
+                termine.push(termin);
+                localStorage.setItem('termine', JSON.stringify(termine));
+
+                // Termin in der Tabelle anzeigen
+                renderTermine();
+                
+                // Eingabefelder zurücksetzen
+                document.getElementById('datum').value = '';
+                document.getElementById('uhrzeit').value = '';
+                document.getElementById('name1').value = '';
+                document.getElementById('beamter').value = '';
+            } else {
+                alert('Bitte alle Felder ausfüllen!');
+            }
+        }
+
+        // Funktion zum Umschalten des Status eines Termins (abgehakt/nicht abgehakt)
+        function toggleStatus(button) {
+            const row = button.closest('tr');
+            const statusIcon = row.querySelector('.status-icon');
+            const terminId = row.getAttribute('data-id');  // Verwendet das data-id Attribut
+
+            let termine = JSON.parse(localStorage.getItem('termine')) || [];
+
+            // Finde den entsprechenden Termin im LocalStorage anhand der ID
+            const termin = termine.find(t => t.id == terminId);
+
+            if (termin) {
+                // Status umschalten
+                termin.status = termin.status === 'pending' ? 'done' : 'pending';
+                localStorage.setItem('termine', JSON.stringify(termine));
+
+                // Status der Zeile in der Tabelle aktualisieren
+                if (termin.status === 'done') {
+                    statusIcon.classList.remove('status-pending');
+                    statusIcon.classList.add('status-done');
+                    row.classList.add('done');
+                } else {
+                    statusIcon.classList.remove('status-done');
+                    statusIcon.classList.add('status-pending');
+                    row.classList.remove('done');
+                }
+            }
+        }
+
+        // Funktion zum Bearbeiten eines Termins
+        function editTermin(button) {
+            const row = button.closest('tr');
+            const cells = row.querySelectorAll('td');
+            
+            document.getElementById('datum').value = cells[1].textContent;
+            document.getElementById('uhrzeit').value = cells[2].textContent;
+            document.getElementById('name1').value = cells[3].textContent;
+            document.getElementById('beamter').value = cells[4].textContent;
+
+            const termine = JSON.parse(localStorage.getItem('termine'));
+            const terminId = row.getAttribute('data-id');
+
+            // Lösche den Termin aus LocalStorage, wenn bearbeitet
+            const index = termine.findIndex(t => t.id == terminId);
+            if (index > -1) {
+                termine.splice(index, 1);
+                localStorage.setItem('termine', JSON.stringify(termine));
+            }
+
+            row.remove();
+        }
+
+        // Funktion zum Löschen eines Termins
+        function deleteTermin(button) {
+            const row = button.closest('tr');
+            const terminId = row.getAttribute('data-id');  // Verwendet das data-id Attribut
+
+            let termine = JSON.parse(localStorage.getItem('termine')) || [];
+
+            // Finde den Termin anhand der ID und lösche ihn aus LocalStorage
+            termine = termine.filter(t => t.id != terminId);
+            localStorage.setItem('termine', JSON.stringify(termine));
+
+            // Zeile aus der Tabelle entfernen
+            row.remove();
+        }
+
+        // Funktion zum Rendern der Termine aus dem LocalStorage
+        function renderTermine() {
+            const tableBody = document.getElementById('terminListe');
+            const termine = JSON.parse(localStorage.getItem('termine')) || [];
+            
+            tableBody.innerHTML = ''; // Tabelle zurücksetzen
+
+            termine.forEach((termin) => {
+                const row = document.createElement('tr');
+                row.setAttribute('data-id', termin.id);  // Füge eine "data-id" hinzu
+
+                row.innerHTML = ` 
+                    <td><span class="status-icon ${termin.status === 'done' ? 'status-done' : 'status-pending'}"></span></td>
+                    <td>${termin.datum}</td>
+                    <td>${termin.uhrzeit}</td>
+                    <td>${termin.name1}</td>
+                    <td>${termin.beamter}</td>
+                    <td>
+                        <button onclick="toggleStatus(this)">Abhaken</button>
+                        <button onclick="editTermin(this)">Bearbeiten</button>
+                        <button onclick="deleteTermin(this)">Löschen</button>
+                    </td>
+                `;
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Polling-Funktion (alle 5 Sekunden) - rendert immer den aktuellen Status aus dem LocalStorage
+        setInterval(() => {
+            renderTermine(); // Überprüft und rendert die Termine aus dem LocalStorage
+        }, 1000);  // 5000 Millisekunden = 5 Sekunden
+
+        // Beim Laden der Seite Termine rendern
+        renderTermine();
+    </script>
+</body>
+</html>
